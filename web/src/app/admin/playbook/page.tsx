@@ -21,6 +21,12 @@ export default async function PlaybookPage() {
     take: 50,
   });
 
+  const pendingTargets = await prisma.outreachTarget.findMany({
+    where: { done: false },
+    orderBy: [{ score: "desc" }],
+    take: 40,
+  });
+
   const respondidos = logs.length;
   const convertidos = logs.filter((l) => l.status === "converted").length;
   const removidos = logs.filter((l) => l.status === "removed").length;
@@ -176,7 +182,17 @@ export default async function PlaybookPage() {
             <strong>traduz</strong> pra você entender e <strong>gera sua resposta</strong> em inglês
             com tom de dev real. Você escreve tudo em português.
           </p>
-          <OutreachAssistant />
+          <OutreachAssistant
+            targets={pendingTargets.map((t) => ({
+              id: t.id,
+              sub: t.sub,
+              title: t.title,
+              url: t.url,
+              score: t.score,
+              comments: t.comments,
+              ageDays: t.ageDays,
+            }))}
+          />
         </Section>
 
         {/* TABELA DE ACOMPANHAMENTO */}

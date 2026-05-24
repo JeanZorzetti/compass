@@ -142,6 +142,22 @@ model IngestionLog {
   @@map("ingestion_logs")
 }
 
+// Alvos de outreach empurrados pelo fresh_outreach.py local (PC busca, backend guarda).
+model OutreachTarget {
+  id          String   @id // id do post no Reddit (dedupe)
+  sub         String
+  title       String   @db.Text
+  url         String
+  score       Int      @default(0)
+  comments    Int      @default(0)
+  ageDays     Int      @default(0)
+  done        Boolean  @default(false) // marcado quando Jean já respondeu
+  pushedAt    DateTime @default(now())
+
+  @@index([done, score])
+  @@map("outreach_targets")
+}
+
 // Registro de outreach manual nos fóruns (uso interno do admin).
 model OutreachLog {
   id          String   @id @default(cuid())

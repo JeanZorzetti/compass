@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { addOutreach } from "./actions";
+import { addOutreach, markTargetDone } from "./actions";
 
-export function OutreachAssistant() {
-  // Entrada por URL (busca via Python local, cola a URL aqui)
+type Target = {
+  id: string;
+  sub: string;
+  title: string;
+  url: string;
+  score: number;
+  comments: number;
+  ageDays: number;
+};
+
+export function OutreachAssistant({ targets = [] }: { targets?: Target[] }) {
+  // Entrada por URL (fallback: colar manualmente)
   const [targetUrl, setTargetUrl] = useState("");
 
   // Assistente de tradução/resposta
@@ -35,6 +45,30 @@ export function OutreachAssistant() {
   function subFromUrl(url: string): string {
     const m = url.match(/reddit\.com\/r\/([^/]+)/i);
     return m ? m[1] : "";
+  }
+
+  async function carregarDeUrl(url: string, sub: string) {
+    setErr(null);
+    setCurrentUrl(url);
+    setCurrentSub(sub);
+    setPostPt("");
+    setReplyPt("");
+    setReplyEn("");
+    setLoadingFetch(true);
+    try {
+      const d = await call("/api/admin/post-text", { url });
+      const text = (d.text as string) ?? "";
+      setPostEn(text);
+      setLoadingT(true);
+      const tr = await call("/api/admin/assist", { mode: "translate", input: text });
+      setPostPt((tr.result as string) ?? "");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "erro");
+    } finally {
+      setLoadingFetch(false);
+      setLoadingT(false);
+      document.getElementById("assist-box")?.scrollIntoView({ behavior: "smooth" });
+    }
   }
 
   async function carregarUrl() {
@@ -105,10 +139,66 @@ export function OutreachAssistant() {
         </div>
       )}
 
-      {/* ENTRADA POR URL */}
+      {/* LISTA DE ALVOS (empurrados pelo fresh_outreach.py) */}
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            🎯 Alvos pra responder ({targets.length})
+          </p>
+          <span className="text-xs text-zinc-500">
+            atualize rodando <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-950">python miner/fresh_outreach.py week</code>
+          </span>
+        </div>
+        {targets.length === 0 ? (
+          <p className="mt-3 text-sm text-zinc-500">
+            Nenhum alvo ainda. Rode o comando acima no seu PC — ele busca os posts e envia pra cá
+            automaticamente.
+          </p>
+        ) : (
+          <div className="mt-3 max-h-96 space-y-2 overflow-y-auto">
+            {targets.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-start justify-between gap-3 rounded-md border border-zinc-100 p-3 dark:border-zinc-800"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs text-zinc-500">
+                    {t.ageDays}d · r/{t.sub} · {t.score}↑ {t.comments}💬
+                  </p>
+                  <p className="text-sm text-zinc-800 dark:text-zinc-200">{t.title}</p>
+                  <a
+                    href={t.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-indigo-600 hover:underline dark:text-indigo-400"
+                  >
+                    abrir no Reddit ↗
+                  </a>
+                </div>
+                <div className="flex flex-shrink-0 flex-col gap-1">
+                  <button
+                    onClick={() => carregarDeUrl(t.url, t.sub)}
+                    className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
+                  >
+                    responder →
+                  </button>
+                  <form action={markTargetDone}>
+                    <input type="hidden" name="id" value={t.id} />
+                    <button className="w-full rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800">
+                      ✓ feito
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ENTRADA POR URL (manual, fallback) */}
       <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          📍 Cole a URL do post do Reddit
+          📍 Ou cole uma URL manualmente
         </p>
         <p className="mt-1 text-xs text-zinc-500">
           Ache os alvos rodando <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-950">python miner/fresh_outreach.py week</code> no

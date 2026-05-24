@@ -50,3 +50,17 @@ export async function deleteOutreach(formData: FormData) {
   await prisma.outreachLog.delete({ where: { id } });
   revalidatePath("/admin/playbook");
 }
+
+export async function markTargetDone(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await prisma.outreachTarget.update({ where: { id }, data: { done: true } });
+  revalidatePath("/admin/playbook");
+}
+
+export async function clearDoneTargets() {
+  await requireAdmin();
+  await prisma.outreachTarget.deleteMany({ where: { done: true } });
+  revalidatePath("/admin/playbook");
+}
