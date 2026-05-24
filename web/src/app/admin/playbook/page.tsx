@@ -168,12 +168,13 @@ export default async function PlaybookPage() {
           </p>
         </Section>
 
-        {/* ASSISTENTE BILÍNGUE */}
-        <Section title="🌐 Assistente bilíngue (você não precisa saber inglês)">
+        {/* CENTRO DE COMANDO */}
+        <Section title="🚀 Centro de comando (busca + tradução + resposta)">
           <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-            Cole o post em inglês pra entender em português. Escreva sua resposta em português e
-            receba a versão em inglês com tom de dev real (sem cara de IA). Você opera 100% em
-            português.
+            Tudo num lugar, em português: <strong>busca</strong> posts recentes pra responder,
+            <strong> traduz</strong> pra você entender, e <strong>gera sua resposta</strong> em
+            inglês com tom de dev real (sem cara de IA). Você não precisa saber inglês nem abrir
+            terminal.
           </p>
           <OutreachAssistant />
         </Section>
