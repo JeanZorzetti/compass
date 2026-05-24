@@ -30,6 +30,9 @@ function looksLikePain(title: string): boolean {
   return PAIN_HINTS.some((h) => t.includes(h));
 }
 
+// diag captura o último status do Reddit pra debug (se vier 403/429 do datacenter).
+const diag = { lastStatus: 0 as number, lastErr: "" as string };
+
 async function fetchSearch(subreddit: string, query: string, t: string): Promise<Record<string, unknown>[]> {
   const url = new URL(`https://www.reddit.com/r/${subreddit}/search.json`);
   url.searchParams.set("q", query);
@@ -42,12 +45,14 @@ async function fetchSearch(subreddit: string, query: string, t: string): Promise
       headers: { "User-Agent": UA },
       signal: AbortSignal.timeout(12000),
     });
+    diag.lastStatus = r.status;
     if (!r.ok) return [];
     const data = await r.json();
     return (data?.data?.children ?? [])
       .filter((c: { kind?: string }) => c.kind === "t3")
       .map((c: { data: Record<string, unknown> }) => c.data);
-  } catch {
+  } catch (e) {
+    diag.lastErr = e instanceof Error ? e.name : "unknown";
     return [];
   }
 }
@@ -103,5 +108,10 @@ export async function POST(req: NextRequest) {
     .sort((a, b) => b.score + b.comments - (a.score + a.comments))
     .slice(0, 30);
 
-  return NextResponse.json({ targets, count: targets.length, timeFilter: tf });
+  return NextResponse.json({
+    targets,
+    count: targets.length,
+    timeFilter: tf,
+    _diag: { redditStatus: diag.lastStatus, fetchErr: diag.lastErr, rawSeen: seen.size },
+  });
 }
