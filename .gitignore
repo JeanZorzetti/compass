@@ -1,0 +1,42 @@
+# ─── Segredos (NUNCA commitar — repo é público) ───
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# ─── Ferramenta interna de mineração (não vai pro repo) ───
+miner/
+
+# ─── Brainstorm/plano interno ───
+BRAINSTORM.md
+
+# ─── Node / Next.js ───
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# ─── Prisma generated ───
+**/src/generated/
+
+# ─── Go ───
+*.exe
+*.test
+*.out
+daemon/compass
+daemon/dist/
+*.zip
+
+# ─── Logs / temp ───
+*.log
+.DS_Store
+*.local
+
+# ─── Editor ───
+.vscode/
+.idea/

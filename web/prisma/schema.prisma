@@ -1,0 +1,143 @@
+// Compass — schema do banco
+// Doc: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────────────────────────────
+// NextAuth core models
+// ──────────────────────────────────────────────────────────────
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ──────────────────────────────────────────────────────────────
+// Compass domain models
+// ──────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+
+  // Compass-specific
+  apiToken      String    @unique @default(cuid())
+  plan          String    @default("trial") // "trial" | "pro" | "lifetime"
+  trialEndsAt   DateTime?
+  stripeCustomerId String? @unique
+  stripeSubscriptionId String? @unique
+  alertEmail    Boolean   @default(true)
+  thresholdPct  Int       @default(80) // alerta em X% da quota estimada
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  usages        Usage[]
+  alerts        Alert[]
+
+  @@map("users")
+}
+
+model Usage {
+  id                       String   @id @default(cuid())
+  userId                   String
+  provider                 String   // "claude_code" no v1
+  model                    String   // "claude-sonnet-4-5", "claude-opus-4-6", etc
+  date                     DateTime @db.Date
+
+  inputTokens              BigInt   @default(0)
+  outputTokens             BigInt   @default(0)
+  cacheReadTokens          BigInt   @default(0)
+  cacheCreateTokens        BigInt   @default(0)
+
+  messageCount             Int      @default(0)
+  sessionCount             Int      @default(0)
+  toolCallCount            Int      @default(0)
+
+  estimatedCostUsd         Decimal  @default(0) @db.Decimal(12, 4)
+
+  reportedAt               DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, model, date])
+  @@index([userId, date])
+  @@index([userId, provider])
+  @@map("usages")
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "approaching_limit" | "limit_hit" | "anomaly" | "high_cost"
+  title       String
+  message     String   @db.Text
+  payload     Json?    // detalhes adicionais (modelo, threshold, tokens, etc)
+  sentAt      DateTime @default(now())
+  acknowledged Boolean @default(false)
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sentAt])
+  @@map("alerts")
+}
+
+model IngestionLog {
+  id          String   @id @default(cuid())
+  userId      String
+  daemonVersion String?
+  payloadSize Int
+  status      String   // "ok" | "error" | "skipped"
+  error       String?  @db.Text
+  receivedAt  DateTime @default(now())
+
+  @@index([userId, receivedAt])
+  @@map("ingestion_logs")
+}
