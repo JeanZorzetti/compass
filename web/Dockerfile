@@ -29,15 +29,14 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma migrations + schema + config (necessários pro migrate deploy)
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-
-# node_modules COMPLETO num diretório isolado pra rodar o Prisma CLI.
-# Cherry-pick de pastas individuais quebra com deps transitivas (ex: 'effect'
-# que @prisma/config requer). Copiar tudo é maior mas robusto.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./prisma-cli/node_modules
+# ── Migrate workspace auto-contido ──
+# O Prisma 7 CLI precisa do config file no mesmo CWD onde 'prisma/config'
+# resolve via node_modules. Montamos /app/migrate como workspace completo:
+# node_modules + prisma/ + prisma.config.ts + package.json juntos.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./migrate/node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./migrate/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./migrate/prisma.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./migrate/package.json
 
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
