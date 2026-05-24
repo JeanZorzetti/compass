@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-static";
 
-const VERSION = "v0.4.0";
+const VERSION = "v0.5.0";
 const REPO = "JeanZorzetti/compass";
 
 const SCRIPT = `# Compass daemon installer (Windows)

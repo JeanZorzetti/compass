@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-static";
 
-const VERSION = "v0.4.0";
+const VERSION = "v0.5.0";
 const REPO = "JeanZorzetti/compass";
 
 const SCRIPT = `#!/bin/sh
@@ -59,8 +59,13 @@ echo ""
 echo "Next steps:"
 echo "  1. Copy your token from https://compass.polarisia.com.br/dashboard"
 echo "  2. export COMPASS_TOKEN=<your token>"
-echo "  3. export COMPASS_API=https://compass.polarisia.com.br"
-echo "  4. compass --watch"
+echo "     export COMPASS_API=https://compass.polarisia.com.br"
+echo ""
+echo "  Then either run it in the foreground:"
+echo "     compass --watch"
+echo ""
+echo "  Or install it as a background service (runs on boot):"
+echo "     compass service install"
 `;
 
 export function GET() {

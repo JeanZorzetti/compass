@@ -14,12 +14,19 @@ import (
 	"time"
 )
 
-const version = "0.4.0"
+const version = "0.5.0"
 
 // global, setado em main() — usado por tick/runOnce sem precisar passar parâmetro
 var ingestClient *IngestClient
 
 func main() {
+	// Subcomando `service` é interceptado antes do flag parse (flag não lida com subcomandos).
+	// Ex: compass service install | uninstall | start | stop | status | run
+	if len(os.Args) > 1 && os.Args[1] == "service" {
+		handleServiceCommand(os.Args[2:], 5*time.Minute)
+		return
+	}
+
 	var (
 		watch    = flag.Bool("watch", false, "rodar em modo contínuo (polling)")
 		interval = flag.Duration("interval", 5*time.Minute, "intervalo entre polls em modo --watch (ex: 30s, 5m, 1h)")

@@ -29,6 +29,25 @@ compass --watch --quiet
 compass --version
 ```
 
+## Modo serviço (roda no boot, em background)
+
+Em vez de manter `compass --watch` aberto num terminal, instale como serviço do
+sistema (launchd no macOS, systemd no Linux, Service Manager no Windows):
+
+```bash
+export COMPASS_TOKEN=<seu token>
+export COMPASS_API=https://compass.polarisia.com.br
+
+compass service install     # instala + inicia (roda no boot)
+compass service status      # rodando / parado
+compass service stop
+compass service start
+compass service restart
+compass service uninstall   # remove o serviço
+```
+
+O serviço sincroniza a cada 5 minutos automaticamente.
+
 ## Build
 
 ### Local (apenas pra seu OS)
