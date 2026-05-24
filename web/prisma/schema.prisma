@@ -141,3 +141,17 @@ model IngestionLog {
   @@index([userId, receivedAt])
   @@map("ingestion_logs")
 }
+
+// Registro de outreach manual nos fóruns (uso interno do admin).
+model OutreachLog {
+  id          String   @id @default(cuid())
+  url         String   // link do post respondido
+  community   String   // r/cursor, r/ClaudeAI, etc
+  note        String?  @db.Text // o que respondeu / contexto
+  status      String   @default("responded") // responded | upvoted | removed | converted
+  upvotes     Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("outreach_logs")
+}

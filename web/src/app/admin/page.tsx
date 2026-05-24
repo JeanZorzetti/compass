@@ -42,9 +42,17 @@ export default async function AdminPage() {
           <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">
             Compass · Admin
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-            Business overview
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              Business overview
+            </h1>
+            <a
+              href="/admin/playbook"
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              📋 Playbook de Outreach
+            </a>
+          </div>
         </header>
 
         {/* Métricas de negócio */}
