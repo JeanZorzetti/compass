@@ -1,0 +1,6 @@
+# Força LF em scripts shell e arquivos que rodam em containers Linux.
+# CRLF quebraria o shebang (#!/bin/sh) no container.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-entrypoint.sh text eol=lf
+*.go text eol=lf
