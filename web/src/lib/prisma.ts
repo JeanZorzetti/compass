@@ -13,12 +13,27 @@ function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg({ connectionString });
   return new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getPrisma(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient();
+  }
+  return globalForPrisma.prisma;
 }
+
+// Proxy lazy: o client só é instanciado no primeiro acesso real (runtime),
+// nunca durante o import (build). Isso evita "DATABASE_URL não definido"
+// quando o Next.js coleta page data no build sem env vars.
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = getPrisma();
+    const value = client[prop as keyof PrismaClient];
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
