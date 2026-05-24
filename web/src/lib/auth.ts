@@ -5,6 +5,9 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Necessário atrás de proxy reverso (EasyPanel/Vercel/etc):
+  // sem isto, NextAuth não confia no Host header e quebra o PKCE/cookies.
+  trustHost: true,
   adapter: PrismaAdapter(prisma),
   providers: [
     GitHub({
