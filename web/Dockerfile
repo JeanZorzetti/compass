@@ -34,11 +34,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
-# CLI do Prisma + adapter num diretório isolado (não conflita com standalone node_modules)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/prisma ./prisma-cli/node_modules/.bin/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./prisma-cli/node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./prisma-cli/node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/dotenv ./prisma-cli/node_modules/dotenv
+# node_modules COMPLETO num diretório isolado pra rodar o Prisma CLI.
+# Cherry-pick de pastas individuais quebra com deps transitivas (ex: 'effect'
+# que @prisma/config requer). Copiar tudo é maior mas robusto.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./prisma-cli/node_modules
 
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
