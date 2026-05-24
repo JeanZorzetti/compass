@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Compass — Find your AI bearings",
+  title: "Compass — Know before you hit the AI limit",
   description:
-    "Monitor Claude Code, Cursor and other AI tool usage locally. Get alerted before you hit limits and see what you would have paid on pay-as-you-go.",
+    "Compass warns you before you get throttled on Claude Code — across every account — and shows what your usage would cost on pay-as-you-go. Predictive alerts, not just a usage panel.",
 };
 
 export default function RootLayout({

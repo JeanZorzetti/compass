@@ -48,11 +48,11 @@ export default async function PricingPage() {
               <span className="text-sm text-zinc-500">/ month</span>
             </div>
             <ul className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-              <Feature>Unlimited daemon syncs</Feature>
+              <Feature>Predictive alerts before you hit limits</Feature>
+              <Feature>Multi-account, multi-tool in one view</Feature>
+              <Feature>Pay-as-you-go cost equivalent</Feature>
+              <Feature>Cross-platform (Win / macOS / Linux)</Feature>
               <Feature>Real-time token tracking</Feature>
-              <Feature>PAYG cost equivalent</Feature>
-              <Feature>Multi-account support</Feature>
-              <Feature>Email alerts before limits</Feature>
               <Feature>Cancel anytime</Feature>
             </ul>
             <div className="mt-8">
