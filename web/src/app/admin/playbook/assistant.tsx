@@ -58,6 +58,14 @@ export function OutreachAssistant({ targets = [] }: { targets?: Target[] }) {
     try {
       const d = await call("/api/admin/post-text", { url });
       const text = (d.text as string) ?? "";
+      if (!text) {
+        setErr(
+          (d.error as string) ??
+            "Não consegui puxar o post automaticamente. Abra o post no Reddit, copie o texto, e cole no campo 'Post em inglês' abaixo."
+        );
+        document.getElementById("assist-box")?.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
       setPostEn(text);
       setLoadingT(true);
       const tr = await call("/api/admin/assist", { mode: "translate", input: text });
