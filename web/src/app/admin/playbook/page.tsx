@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { addOutreach, updateOutreachStatus, deleteOutreach } from "./actions";
+import { OutreachAssistant } from "./assistant";
 
 export const metadata = { title: "Playbook — Compass Admin" };
 export const dynamic = "force-dynamic";
@@ -165,6 +166,16 @@ export default async function PlaybookPage() {
           <p className="mt-3 text-xs text-zinc-500">
             Acompanhe os números reais na <Link href="/admin" className="underline">aba Admin</Link> (MRR, trials, conversão).
           </p>
+        </Section>
+
+        {/* ASSISTENTE BILÍNGUE */}
+        <Section title="🌐 Assistente bilíngue (você não precisa saber inglês)">
+          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+            Cole o post em inglês pra entender em português. Escreva sua resposta em português e
+            receba a versão em inglês com tom de dev real (sem cara de IA). Você opera 100% em
+            português.
+          </p>
+          <OutreachAssistant />
         </Section>
 
         {/* TABELA DE ACOMPANHAMENTO */}
