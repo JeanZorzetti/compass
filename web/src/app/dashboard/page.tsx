@@ -296,15 +296,32 @@ function EmptyState({ apiToken }: { apiToken: string }) {
       <p className="mt-2 text-sm text-zinc-500">
         Install the Compass daemon, set your token, and run it once to populate this dashboard.
       </p>
-      <pre className="mx-auto mt-6 max-w-xl overflow-x-auto rounded bg-zinc-100 p-4 text-left text-xs text-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-        <code>{`# Mac/Linux
-curl -L https://compass.polarisia.com.br/dl/compass | bash
+
+      <div className="mx-auto mt-6 max-w-xl space-y-4 text-left">
+        <div>
+          <p className="mb-1 text-xs font-medium text-zinc-500">macOS / Linux</p>
+          <pre className="overflow-x-auto rounded bg-zinc-100 p-4 text-xs text-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+            <code>{`curl -L https://compass.polarisia.com.br/dl/compass | bash
 
 export COMPASS_TOKEN=${apiToken}
 export COMPASS_API=https://compass.polarisia.com.br
 
 compass --watch`}</code>
-      </pre>
+          </pre>
+        </div>
+
+        <div>
+          <p className="mb-1 text-xs font-medium text-zinc-500">Windows (PowerShell)</p>
+          <pre className="overflow-x-auto rounded bg-zinc-100 p-4 text-xs text-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+            <code>{`irm https://compass.polarisia.com.br/dl/compass.ps1 | iex
+
+$env:COMPASS_TOKEN = "${apiToken}"
+$env:COMPASS_API = "https://compass.polarisia.com.br"
+
+compass --watch`}</code>
+          </pre>
+        </div>
+      </div>
     </div>
   );
 }

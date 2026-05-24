@@ -20,6 +20,9 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
+# Bind em todas as interfaces — sem isto o standalone escuta só em localhost
+# e o proxy do EasyPanel não alcança o container ("Service is not reachable").
+ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
