@@ -3,21 +3,9 @@
 import { useState } from "react";
 import { addOutreach } from "./actions";
 
-type Target = {
-  id: string;
-  sub: string;
-  title: string;
-  score: number;
-  comments: number;
-  ageDays: number;
-  url: string;
-};
-
 export function OutreachAssistant() {
-  // Buscador de alvos
-  const [targets, setTargets] = useState<Target[]>([]);
-  const [loadingTargets, setLoadingTargets] = useState(false);
-  const [timeFilter, setTimeFilter] = useState("week");
+  // Entrada por URL (busca via Python local, cola a URL aqui)
+  const [targetUrl, setTargetUrl] = useState("");
 
   // Assistente de tradução/resposta
   const [postEn, setPostEn] = useState("");
@@ -43,51 +31,28 @@ export function OutreachAssistant() {
     return data;
   }
 
-  async function buscarAlvos() {
-    setErr(null);
-    setLoadingTargets(true);
-    setTargets([]);
-    try {
-      const res = await fetch("/api/admin/targets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ timeFilter }),
-        signal: AbortSignal.timeout(90000),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error((data.error as string) ?? `erro HTTP ${res.status}`);
-      }
-      const found = (data.targets as Target[]) ?? [];
-      setTargets(found);
-      if (found.length === 0) {
-        setErr("Nenhum alvo encontrado. Tente 'último mês' ou tente de novo em alguns segundos.");
-      }
-    } catch (e) {
-      if (e instanceof Error && e.name === "TimeoutError") {
-        setErr("A busca demorou demais (timeout). Tente de novo.");
-      } else {
-        setErr(e instanceof Error ? e.message : "erro desconhecido");
-      }
-    } finally {
-      setLoadingTargets(false);
-    }
+  // Cola a URL do post (achada via fresh_outreach.py local) → puxa texto + traduz
+  function subFromUrl(url: string): string {
+    const m = url.match(/reddit\.com\/r\/([^/]+)/i);
+    return m ? m[1] : "";
   }
 
-  // Clica num alvo: puxa o texto, traduz, e prepara o assistente
-  async function usarAlvo(t: Target) {
+  async function carregarUrl() {
     setErr(null);
-    setCurrentUrl(t.url);
-    setCurrentSub(t.sub);
+    if (!targetUrl.includes("reddit.com")) {
+      setErr("Cole uma URL válida do Reddit.");
+      return;
+    }
+    setCurrentUrl(targetUrl);
+    setCurrentSub(subFromUrl(targetUrl));
     setPostPt("");
     setReplyPt("");
     setReplyEn("");
     setLoadingFetch(true);
     try {
-      const d = await call("/api/admin/post-text", { url: t.url });
-      const text = (d.text as string) ?? t.title;
+      const d = await call("/api/admin/post-text", { url: targetUrl });
+      const text = (d.text as string) ?? "";
       setPostEn(text);
-      // traduz automaticamente
       setLoadingT(true);
       const tr = await call("/api/admin/assist", { mode: "translate", input: text });
       setPostPt((tr.result as string) ?? "");
@@ -96,8 +61,6 @@ export function OutreachAssistant() {
     } finally {
       setLoadingFetch(false);
       setLoadingT(false);
-      // scroll pro assistente
-      document.getElementById("assist-box")?.scrollIntoView({ behavior: "smooth" });
     }
   }
 
@@ -142,62 +105,32 @@ export function OutreachAssistant() {
         </div>
       )}
 
-      {/* BUSCADOR DE ALVOS */}
+      {/* ENTRADA POR URL */}
       <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            🔍 Buscar posts recentes pra responder
-          </p>
-          <div className="flex items-center gap-2">
-            <select
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)}
-              className="rounded border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-950"
-            >
-              <option value="week">última semana</option>
-              <option value="month">último mês</option>
-            </select>
-            <button
-              onClick={buscarAlvos}
-              disabled={loadingTargets}
-              className="rounded-md bg-zinc-950 px-4 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-950"
-            >
-              {loadingTargets ? "Buscando..." : "Buscar alvos"}
-            </button>
-          </div>
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          📍 Cole a URL do post do Reddit
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Ache os alvos rodando <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-950">python miner/fresh_outreach.py week</code> no
+          terminal (a busca do Reddit bloqueia o servidor, então roda no seu PC). Cole a URL aqui pra
+          puxar o post e traduzir automático.
+        </p>
+        <div className="mt-3 flex gap-2">
+          <input
+            type="url"
+            value={targetUrl}
+            onChange={(e) => setTargetUrl(e.target.value)}
+            placeholder="https://www.reddit.com/r/ClaudeAI/comments/..."
+            className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          />
+          <button
+            onClick={carregarUrl}
+            disabled={loadingFetch || !targetUrl.trim()}
+            className="flex-shrink-0 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 hover:bg-indigo-700"
+          >
+            {loadingFetch ? "Carregando..." : "Carregar + traduzir"}
+          </button>
         </div>
-
-        {targets.length > 0 && (
-          <div className="mt-3 max-h-80 space-y-2 overflow-y-auto">
-            {targets.map((t) => (
-              <div
-                key={t.id}
-                className="flex items-start justify-between gap-3 rounded-md border border-zinc-100 p-3 dark:border-zinc-800"
-              >
-                <div className="min-w-0">
-                  <p className="text-xs text-zinc-500">
-                    {t.ageDays}d · r/{t.sub} · {t.score}↑ {t.comments}💬
-                  </p>
-                  <p className="truncate text-sm text-zinc-800 dark:text-zinc-200">{t.title}</p>
-                  <a
-                    href={t.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-indigo-600 hover:underline dark:text-indigo-400"
-                  >
-                    abrir no Reddit ↗
-                  </a>
-                </div>
-                <button
-                  onClick={() => usarAlvo(t)}
-                  className="flex-shrink-0 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
-                >
-                  responder este →
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ASSISTENTE */}

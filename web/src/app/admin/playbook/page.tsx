@@ -169,12 +169,12 @@ export default async function PlaybookPage() {
         </Section>
 
         {/* CENTRO DE COMANDO */}
-        <Section title="🚀 Centro de comando (busca + tradução + resposta)">
+        <Section title="🚀 Centro de comando (tradução + resposta)">
           <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-            Tudo num lugar, em português: <strong>busca</strong> posts recentes pra responder,
-            <strong> traduz</strong> pra você entender, e <strong>gera sua resposta</strong> em
-            inglês com tom de dev real (sem cara de IA). Você não precisa saber inglês nem abrir
-            terminal.
+            Cole a URL de um post do Reddit (ache os alvos rodando{" "}
+            <Code>python miner/fresh_outreach.py week</Code> no terminal). O assistente{" "}
+            <strong>traduz</strong> pra você entender e <strong>gera sua resposta</strong> em inglês
+            com tom de dev real. Você escreve tudo em português.
           </p>
           <OutreachAssistant />
         </Section>
