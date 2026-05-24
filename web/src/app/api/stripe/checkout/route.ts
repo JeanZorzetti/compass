@@ -27,33 +27,51 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "user not found" }, { status: 404 });
   }
 
-  // Cria customer no Stripe se não existir
-  let customerId = user.stripeCustomerId;
-  if (!customerId) {
-    const customer = await getStripe().customers.create({
-      email: user.email,
-      metadata: { userId: user.id },
+  try {
+    const stripe = getStripe();
+
+    // Resolve um customer válido. Um stripeCustomerId salvo pode ser de outro
+    // modo (test vs live) ou ter sido deletado — nesse caso recriamos.
+    let customerId = user.stripeCustomerId;
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if ((existing as { deleted?: boolean }).deleted) customerId = null;
+      } catch {
+        customerId = null; // não existe neste modo → recria
+      }
+    }
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { userId: user.id },
+      });
+      customerId = customer.id;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { stripeCustomerId: customerId },
+      });
+    }
+
+    const appUrl = process.env.APP_URL ?? "http://localhost:3001";
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: isLifetime(priceId) ? "payment" : "subscription",
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${appUrl}/dashboard?upgraded=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/pricing?cancelled=1`,
+      allow_promotion_codes: true,
+      metadata: {
+        userId: user.id,
+        plan: isLifetime(priceId) ? "lifetime" : "pro_monthly",
+      },
     });
-    customerId = customer.id;
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { stripeCustomerId: customerId },
-    });
+
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "checkout failed";
+    console.error("[stripe-checkout] error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const appUrl = process.env.APP_URL ?? "http://localhost:3001";
-  const checkoutSession = await getStripe().checkout.sessions.create({
-    mode: isLifetime(priceId) ? "payment" : "subscription",
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}/dashboard?upgraded=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/pricing?cancelled=1`,
-    allow_promotion_codes: true,
-    metadata: {
-      userId: user.id,
-      plan: isLifetime(priceId) ? "lifetime" : "pro_monthly",
-    },
-  });
-
-  return NextResponse.json({ url: checkoutSession.url });
 }
