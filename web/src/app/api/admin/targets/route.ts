@@ -5,16 +5,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const SUBREDDITS = ["ClaudeAI", "cursor", "ChatGPTCoding", "ChatGPT", "OpenAI"];
-const QUERIES = [
-  "limit",
-  "rate limit",
-  "usage limit",
-  "throttled",
-  "hit the limit",
-  "ran out",
-  "bait and switch",
-  "weekly limit",
-];
+// Menos queries (as mais produtivas) pra caber no tempo de resposta do proxy.
+const QUERIES = ["limit", "rate limit", "throttled"];
 const PAIN_HINTS = [
   "limit", "throttl", "rate", "cap", "ran out", "bait", "switch",
   "downgrade", "burning", "unusable", "scam", "charged", "expensive",
@@ -46,7 +38,10 @@ async function fetchSearch(subreddit: string, query: string, t: string): Promise
   url.searchParams.set("t", t);
   url.searchParams.set("sort", "new");
   try {
-    const r = await fetch(url, { headers: { "User-Agent": UA } });
+    const r = await fetch(url, {
+      headers: { "User-Agent": UA },
+      signal: AbortSignal.timeout(12000),
+    });
     if (!r.ok) return [];
     const data = await r.json();
     return (data?.data?.children ?? [])
@@ -71,29 +66,36 @@ export async function POST(req: NextRequest) {
   const seen = new Map<string, Target>();
   const now = Date.now();
 
+  // Monta todas as combinações (sub × query) e busca em paralelo — rápido o
+  // suficiente pra não estourar o timeout do proxy. settled tolera falhas.
+  const jobs: Promise<{ sub: string; posts: Record<string, unknown>[] }>[] = [];
   for (const sub of SUBREDDITS) {
     for (const q of QUERIES) {
-      const posts = await fetchSearch(sub, q, tf);
-      for (const p of posts) {
-        const id = String(p.id);
-        if (seen.has(id)) continue;
-        const title = String(p.title ?? "");
-        if (!looksLikePain(title)) continue;
-        const created = Number(p.created_utc ?? 0) * 1000;
-        const ageDays = Math.floor((now - created) / (24 * 60 * 60 * 1000));
-        if (ageDays > 30) continue;
-        seen.set(id, {
-          id,
-          sub,
-          title,
-          score: Number(p.score ?? 0),
-          comments: Number(p.num_comments ?? 0),
-          ageDays,
-          url: "https://www.reddit.com" + String(p.permalink ?? ""),
-        });
-      }
-      // pequena pausa pra não martelar o Reddit
-      await new Promise((r) => setTimeout(r, 400));
+      jobs.push(fetchSearch(sub, q, tf).then((posts) => ({ sub, posts })));
+    }
+  }
+
+  const results = await Promise.allSettled(jobs);
+  for (const res of results) {
+    if (res.status !== "fulfilled") continue;
+    const { sub, posts } = res.value;
+    for (const p of posts) {
+      const id = String(p.id);
+      if (seen.has(id)) continue;
+      const title = String(p.title ?? "");
+      if (!looksLikePain(title)) continue;
+      const created = Number(p.created_utc ?? 0) * 1000;
+      const ageDays = Math.floor((now - created) / (24 * 60 * 60 * 1000));
+      if (ageDays > 30) continue;
+      seen.set(id, {
+        id,
+        sub,
+        title,
+        score: Number(p.score ?? 0),
+        comments: Number(p.num_comments ?? 0),
+        ageDays,
+        url: "https://www.reddit.com" + String(p.permalink ?? ""),
+      });
     }
   }
 

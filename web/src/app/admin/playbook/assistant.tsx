@@ -46,11 +46,29 @@ export function OutreachAssistant() {
   async function buscarAlvos() {
     setErr(null);
     setLoadingTargets(true);
+    setTargets([]);
     try {
-      const d = await call("/api/admin/targets", { timeFilter });
-      setTargets((d.targets as Target[]) ?? []);
+      const res = await fetch("/api/admin/targets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timeFilter }),
+        signal: AbortSignal.timeout(90000),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data.error as string) ?? `erro HTTP ${res.status}`);
+      }
+      const found = (data.targets as Target[]) ?? [];
+      setTargets(found);
+      if (found.length === 0) {
+        setErr("Nenhum alvo encontrado. Tente 'último mês' ou tente de novo em alguns segundos.");
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "erro");
+      if (e instanceof Error && e.name === "TimeoutError") {
+        setErr("A busca demorou demais (timeout). Tente de novo.");
+      } else {
+        setErr(e instanceof Error ? e.message : "erro desconhecido");
+      }
     } finally {
       setLoadingTargets(false);
     }
