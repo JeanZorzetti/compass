@@ -7,6 +7,7 @@ type Target = {
   id: string;
   sub: string;
   title: string;
+  body: string;
   url: string;
   score: number;
   comments: number;
@@ -47,35 +48,25 @@ export function OutreachAssistant({ targets = [] }: { targets?: Target[] }) {
     return m ? m[1] : "";
   }
 
-  async function carregarDeUrl(url: string, sub: string) {
+  // Usa o texto que JÁ veio do PC (servidor toma 403 do Reddit). Sem chamar Reddit.
+  async function usarAlvo(t: Target) {
     setErr(null);
-    setCurrentUrl(url);
-    setCurrentSub(sub);
-    setPostPt("");
+    setCurrentUrl(t.url);
+    setCurrentSub(t.sub);
     setReplyPt("");
     setReplyEn("");
-    setLoadingFetch(true);
+    const fullText = [t.title, t.body].filter(Boolean).join("\n\n");
+    setPostEn(fullText);
+    setPostPt("");
+    document.getElementById("assist-box")?.scrollIntoView({ behavior: "smooth" });
+    setLoadingT(true);
     try {
-      const d = await call("/api/admin/post-text", { url });
-      const text = (d.text as string) ?? "";
-      if (!text) {
-        setErr(
-          (d.error as string) ??
-            "Não consegui puxar o post automaticamente. Abra o post no Reddit, copie o texto, e cole no campo 'Post em inglês' abaixo."
-        );
-        document.getElementById("assist-box")?.scrollIntoView({ behavior: "smooth" });
-        return;
-      }
-      setPostEn(text);
-      setLoadingT(true);
-      const tr = await call("/api/admin/assist", { mode: "translate", input: text });
+      const tr = await call("/api/admin/assist", { mode: "translate", input: fullText });
       setPostPt((tr.result as string) ?? "");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "erro");
     } finally {
-      setLoadingFetch(false);
       setLoadingT(false);
-      document.getElementById("assist-box")?.scrollIntoView({ behavior: "smooth" });
     }
   }
 
@@ -185,7 +176,7 @@ export function OutreachAssistant({ targets = [] }: { targets?: Target[] }) {
                 </div>
                 <div className="flex flex-shrink-0 flex-col gap-1">
                   <button
-                    onClick={() => carregarDeUrl(t.url, t.sub)}
+                    onClick={() => usarAlvo(t)}
                     className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
                   >
                     responder →

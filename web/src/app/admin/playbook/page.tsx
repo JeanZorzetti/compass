@@ -187,6 +187,7 @@ export default async function PlaybookPage() {
               id: t.id,
               sub: t.sub,
               title: t.title,
+              body: t.bodyText ?? "",
               url: t.url,
               score: t.score,
               comments: t.comments,

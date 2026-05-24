@@ -29,11 +29,13 @@ export async function POST(req: NextRequest) {
         comments: Number(t.comments ?? 0),
         ageDays: Number(t.ageDays ?? 0),
         title: String(t.title ?? ""),
+        bodyText: String(t.body ?? ""),
       },
       create: {
         id: String(t.id),
         sub: String(t.sub ?? ""),
         title: String(t.title ?? ""),
+        bodyText: String(t.body ?? ""),
         url: String(t.url),
         score: Number(t.score ?? 0),
         comments: Number(t.comments ?? 0),

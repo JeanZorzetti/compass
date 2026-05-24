@@ -147,6 +147,7 @@ model OutreachTarget {
   id          String   @id // id do post no Reddit (dedupe)
   sub         String
   title       String   @db.Text
+  bodyText    String?  @db.Text // texto do post (capturado pelo PC, já que servidor toma 403)
   url         String
   score       Int      @default(0)
   comments    Int      @default(0)
