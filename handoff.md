@@ -10,9 +10,20 @@ imprecisas**. O que está abaixo foi verificado com `curl`, `nslookup` e a CLI d
 
 ---
 
-> **Estado em 29/07 13h:** Etapa 5 (código) feita e no `main`. Etapas 1–4 seguem **travadas na
-> connection string do Postgres** — sem ela eu não tenho o que colocar em `DATABASE_URL`, e as
-> Etapas 2–4 são todas painel de terceiro (GitHub, Resend, Stripe, Hostinger).
+> **Estado em 29/07 13h:** **Etapas 1 e 5 fechadas.** `/pricing` responde **200** em
+> `compass-ten-plum.vercel.app`. Faltam Etapas 2, 3 e 4 — todas painel de terceiro
+> (GitHub OAuth, Resend, Stripe, Hostinger).
+>
+> **Etapa 1, como ficou:** você escolheu a opção **(b) Postgres do VPS EasyPanel**, não o Neon.
+> `postgres://compass_db@2.24.207.200:5451/compass_db` — PG 16.14, alcançável da internet, as 4
+> migrations aplicadas em 29/07. A URL está em `DATABASE_URL` production e no `web/.env` local
+> (gitignorado, é o que faz `prisma migrate deploy` funcionar da sua máquina).
+>
+> 🔴 **Duas dívidas que essa escolha criou.** O servidor **não suporta TLS** (`sslmode=require`
+> devolve *"the server does not support SSL connections"*), então `sslmode=disable` não é preferência
+> — é a única opção, e senha + dados dos usuários trafegam em texto puro entre a Vercel e o VPS. E a
+> senha usada é a mesma de [[secrets_to_rotate]]. Antes de ter usuário de verdade: ligar TLS no
+> Postgres do EasyPanel e trocar a senha (ou migrar pro Neon, que já vem com TLS).
 
 ## 1 · O que está medido hoje (29/07)
 
@@ -68,12 +79,10 @@ Se você não disser nada, eu sigo com **(a) Neon**.
 
 ## 3 · O passo a passo, com quem faz cada parte
 
-### Etapa 1 — banco (destrava `/pricing`)
+### ✅ Etapa 1 — banco (destrava `/pricing`) — FEITA 29/07
 
-- **Você:** criar o Postgres e me passar a connection string (Neon: *Create project* → copiar a
-  `postgresql://…?sslmode=require`).
-- **Eu:** `vercel env add DATABASE_URL production`, `npx prisma migrate deploy` contra ela,
-  redeploy e conferir `/pricing` respondendo **200** — sem esse 200 na mão, não fechamos a etapa.
+Postgres do VPS, `DATABASE_URL` em production, 4 migrations aplicadas, deploy
+`compass-j0cz6g25g`, e o 200 conferido na mão: `/`, `/login` e `/pricing` respondem **200**.
 
 ⚠️ A Vercel **não roda o `Dockerfile`** deste repo (o último commit trocou pra `prisma generate` no
 `postinstall`), então **`migrate deploy` não acontece sozinho no build** — tem que ser rodado à mão
