@@ -10,6 +10,10 @@ imprecisas**. O que está abaixo foi verificado com `curl`, `nslookup` e a CLI d
 
 ---
 
+> **Estado em 29/07 13h:** Etapa 5 (código) feita e no `main`. Etapas 1–4 seguem **travadas na
+> connection string do Postgres** — sem ela eu não tenho o que colocar em `DATABASE_URL`, e as
+> Etapas 2–4 são todas painel de terceiro (GitHub, Resend, Stripe, Hostinger).
+
 ## 1 · O que está medido hoje (29/07)
 
 | o que | estado |
@@ -110,12 +114,13 @@ que refazer depois da Etapa 4 — e um webhook morto significa **cliente paga e 
 
 ### Etapa 5 — o que faz o produto ter valor
 
-- **Não existe `vercel.json`** neste repo, então `/api/cron/alerts` — o alerta "você vai bater o
-  limite", que é a promessa do produto — **nunca é disparado na Vercel**. Ganha um cron no
-  `vercel.json` (protegido pelo `CRON_SECRET`, que já está configurado).
-- **Não existe `web/.env.example`**, embora o `README.md:37` mande copiá-lo. Fica como saldo da
-  sessão: escrever o arquivo com as 16 variáveis, para o próximo ambiente não ser arqueologia.
-- **Rotacionar os segredos expostos** antes de qualquer divulgação → [[secrets_to_rotate]].
+- ✅ **`web/vercel.json`** (commit `90eaa9d`): cron diário `0 13 * * *` em `/api/cron/alerts`. A
+  Vercel injeta o `Authorization: Bearer $CRON_SECRET` sozinha, e o `CRON_SECRET` já está em prod.
+  **Só passa a valer no próximo deploy.** Deploy é por CLI a partir de `web/` (é lá que mora o
+  `.vercel`), não por git — a Root Directory `.` do painel não é usada.
+- ✅ **`web/.env.example`** (mesmo commit): as 16 variáveis. O `web/.gitignore:34` tinha `.env*` sem
+  negação e estava engolindo o arquivo — corrigido com `!.env.example`.
+- ⏳ **Rotacionar os segredos expostos** antes de qualquer divulgação → [[secrets_to_rotate]].
 
 ---
 
