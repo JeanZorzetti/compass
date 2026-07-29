@@ -10,9 +10,9 @@ imprecisas**. O que está abaixo foi verificado com `curl`, `nslookup` e a CLI d
 
 ---
 
-> **Estado em 29/07 13h:** **Etapas 1 e 5 fechadas.** `/pricing` responde **200** em
-> `compass-ten-plum.vercel.app`. Faltam Etapas 2, 3 e 4 — todas painel de terceiro
-> (GitHub OAuth, Resend, Stripe, Hostinger).
+> **Estado em 29/07 14h:** **Etapas 1, 4 e 5 fechadas — o Compass está no ar em
+> `https://compass.polarisia.com.br`**, com o Polaris intacto no ápice. Faltam **Etapa 2**
+> (GitHub OAuth + Resend → ninguém loga) e **Etapa 3** (Stripe → ninguém paga).
 >
 > **Etapa 1, como ficou:** você escolheu a opção **(b) Postgres do VPS EasyPanel**, não o Neon.
 > `postgres://compass_db@2.24.207.200:5451/compass_db` — PG 16.14, alcançável da internet, as 4
@@ -110,16 +110,25 @@ uma vez, contra a URL nova.
 que refazer depois da Etapa 4 — e um webhook morto significa **cliente paga e não vira assinante**
 (mesmo padrão que já queimou o goiania: [[roilabs_mercadopago_prod_env_vars]]).
 
-### Etapa 4 — DNS (só depois que `/pricing` estiver 200)
+### ✅ Etapa 4 — DNS — FEITA 29/07
 
-- **Eu:** `vercel domains add compass.polarisia.com.br` no projeto `compass`.
-- **Você, na Hostinger** (o `polarisia.com.br` usa `aster/helios.dns-parking.com`): **editar** o
-  registro `compass` — de `A 2.24.207.200` para **`CNAME cname.vercel-dns.com`** (ou `A 76.76.21.21`
-  se o painel não aceitar CNAME em subdomínio). **Não crie nem altere nada no `@`/ápice.**
-- **Eu:** confirmar com `nslookup` + `curl` 200 no domínio final, conferir que `APP_URL` bate com ele
-  (se `APP_URL` ficar no `.vercel.app`, os links dos e-mails e o retorno do Stripe apontam pro lugar
-  errado) e **atualizar a `homepage` do repo** — a chave do projeto no hub é a URL, trocar domínio
-  sem trocar a `homepage` cria projeto duplicado no ranking.
+O registro `compass` na Hostinger virou **`A 76.76.21.21`** (continua tipo A). O `homepage` do repo
+já estava certo. `APP_URL` estava no `.vercel.app` e foi trocada para o domínio final + redeploy
+(`compass-52v7k2nhk`) — sem isso os links dos e-mails e o retorno do Stripe apontariam pro lugar
+errado.
+
+🔴 **O CNAME não funciona aqui, e o erro do painel é enganoso.** Trocar o tipo do registro para
+CNAME devolve *"RRset compass.polarisia.com.br IN CNAME must not be used with any other type on the
+same name"*: um CNAME não coexiste com nenhum outro registro no mesmo nome (RFC 1034), e o A antigo
+ainda estava lá. Editar o **valor** do A é uma operação só, sem deleção e sem janela fora do ar.
+
+🚨 **A segunda armadilha da Vercel.** O `domains inspect` oferece "mude seus nameservers para
+`ns1/ns2.vercel-dns.com`". Isso move o DNS **inteiro** do `polarisia.com.br` da Hostinger pra Vercel
+e derruba o Polaris — é a armadilha do ápice com outra roupa. Só o registro `compass` se toca.
+
+O certificado TLS não sai sozinho na hora: logo depois do DNS propagar, o HTTPS dava
+`curl: (35)` enquanto o HTTP já respondia 200. `vercel certs issue compass.polarisia.com.br`
+resolve em 13s.
 
 ### Etapa 5 — o que faz o produto ter valor
 
@@ -142,6 +151,9 @@ nslookup compass.polarisia.com.br 8.8.8.8                                       
 ```
 
 Os três juntos. O segundo é o que prova que a Etapa 4 não derrubou o vizinho.
+
+**Rodados em 29/07 14h: `200`, `200`, `76.76.21.21`.** `/login` também responde 200 — mas a tela de
+login não *funciona* até a Etapa 2, porque não há provider configurado.
 
 ---
 
